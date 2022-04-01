@@ -1,90 +1,133 @@
-/*Queries that provide answers to the questions from all projects.*/
+SELECT * FROM animals
+WHERE name LIKE '%mon';
 
-SELECT * from animals WHERE name = 'Luna';
+SELECT * FROM animals
+WHERE date_of_birth BETWEEN '2016-01-01' AND '2019-01-01';
 
--- Find all animals whose name ends in "mon".
-SELECT * FROM animals WHERE name LIKE '%mon';
+SELECT * FROM animals
+WHERE neutered = true AND escape_attempts < 3;
 
---  List the name of all animals born between 2016 and 2019.
-SELECT name FROM animals WHERE date_of_birth BETWEEN '2016-01-01' And '2019-01-01';
+SELECT date_of_birth FROM animals
+WHERE name IN ('Agumon', 'Pikachu');
 
--- List the name of all animals that are neutered and have less than 3 escape attempts.
-SELECT name FROM animals WHERE neutered =TRUE And escape_attempts < 3;
+SELECT name, escape_attempts FROM animals
+WHERE weight_kg > 10.5;
 
--- List date of birth of all animals named either "Agumon" or "Pikachu"
-SELECT date_of_birth from animals WHERE name = 'Agumon' OR name = 'Pikachu';
+SELECT * FROM animals
+WHERE neutered = true;
 
--- List name and escape attempts of animals that weigh more than 10.5kg
-SELECT name,escape_attempts from animals WHERE weight_kg > 10.5;
+SELECT * FROM animals
+WHERE name != 'Gabumon';
 
--- Find all animals that are neutered.
-SELECT * from animals WHERE neutered = TRUE;
-
--- Find all animals not named Gabumon.
-SELECT * from animals WHERE name <> 'Gabumon';
-
--- Find all animals with a weight between 10.4kg and 17.3kg (including the animals with the weights that equals precisely 10.4kg or 17.3kg)
-SELECT * from animals WHERE weight_kg >=10.4 AND weight_kg <=17.3;
+SELECT * FROM animals
+WHERE weight_kg >= 10.4 AND weight_kg <= 17.3;
 
 BEGIN;
-UPDATE animals SET species = 'unspecified';
-
--- Verify that change was made
-SELECT * FROM animals;
-
---  roll back the change
+UPDATE animals
+SET species = 'unspecified';
+TABLE animals;
 ROLLBACK;
+TABLE animals;
 
--- verify that species columns went back to the state before transaction.
-SELECT * FROM animals;
-
--- make a transcation
 BEGIN;
-UPDATE animals SET species = 'digimon' WHERE name LIKE '%mon';
-UPDATE animals SET species = 'pokemon' WHERE species IS NULL;
-
+UPDATE animals
+SET species = 'digimon'
+WHERE name LIKE '%mon';
+UPDATE animals
+SET species = 'pokemon'
+WHERE species IS NULL;
+TABLE animals;
 COMMIT;
+TABLE animals;
 
--- Verify that change was made
-SELECT * FROM animals;
-
-
--- Deleting all animals
 BEGIN;
-
 DELETE FROM animals;
-
--- Verify that the animnals table is empty
-SELECT * FROM animals;
-
 ROLLBACK;
 
---verify that thet changes were rolledback
-SELECT * FROM animals;
-
-
 BEGIN;
-DELETE FROM animals WHERE date_of_birth >'2022-01-01';
-select * from animals;
-SAVEPOINT save_point1;
-
-UPDATE animals SET weight_kg = weight_kg * -1;
-
-ROLLBACK TO save_point1;
-
-UPDATE animals SET weight_kg = weight_kg * -1 WHERE weight_kg < 0;
+DELETE FROM animals
+WHERE date_of_birth > '2022-01-01';
+SAVEPOINT SP1;
+UPDATE animals
+SET weight_kg = weight_kg * -1;
+ROLLBACK TO SP1;
+UPDATE animals
+SET weight_kg = weight_kg * -1
+WHERE weight_kg < 0;
 COMMIT;
 
+SELECT COUNT(*)
+FROM animals;
 
--- How many animals are there?
-SELECT count(*) from animals;
+SELECT COUNT(escape_attempts)
+FROM animals
+WHERE escape_attempts = 0;
 
--- How many animals have never tried to escape?
-SELECT count(*) from animals where escape_attempts = 0;
+SELECT AVG(weight_kg)
+FROM animals;
 
-SELECT AVG(weight_kg) as average_weight FROM animals;
-SELECT SUM(escape_attempts) as escape_count, neutered FROM animals GROUP BY neutered ORDER BY escape_count DESC LIMIT 1;
-SELECT species, MAX(weight_kg) as maximum_weight, MIN(weight_kg) as minimum_weight FROM animals GROUP BY species;
-SELECT species, AVG(escape_attempts) FROM animals WHERE date_of_birth BETWEEN '1990-01-01' AND '2000-12-31' GROUP BY species;
-/* END */
+SELECT
+neutered,
+MAX(escape_attempts)
+FROM animals
+GROUP BY neutered;
 
+SELECT
+species,
+MAX(weight_kg), MIN(weight_kg)
+FROM animals
+GROUP BY species;
+
+SELECT
+species,
+date_of_birth,
+AVG(escape_attempts)
+FROM animals
+GROUP BY species, date_of_birth
+HAVING date_of_birth BETWEEN '1990-01-01' AND '2000-01-01';
+
+SELECT A.name
+FROM animals A
+JOIN owners O ON O.id = A.owner_id
+WHERE O.full_name = 'Melody Pond';
+
+SELECT A.name
+FROM animals A
+JOIN species S ON S.id = A.species_id
+WHERE S.name = 'Pokemon';
+
+SELECT O.full_name, A.name
+FROM owners O
+LEFT JOIN animals A ON A.owner_id = O.id;
+
+SELECT S.name, COUNT(S.id)
+FROM species S
+JOIN animals A ON A.species_id = S.id
+GROUP BY S.name;
+
+SELECT S.name AS species, A.owner_id, A.species_id
+FROM animals A
+JOIN species S ON S.id = A.species_id;
+
+SELECT A.name,  S.name AS species
+FROM animals A
+JOIN owners O ON O.id = A.owner_id
+JOIN species S ON S.id = A.species_id
+WHERE O.full_name = 'Jennifer Orwell'
+AND S.name = 'Digimon';
+
+SELECT A.name
+FROM animals A
+JOIN owners O ON O.id = A.owner_id
+WHERE O.full_name = 'Dean Winchester'
+AND A.escape_attempts = 0;
+
+SELECT O.full_name, COUNT(O.full_name)
+FROM animals A
+JOIN owners O ON O.id = A.owner_id;
+
+SELECT O.full_name, COUNT(O.full_name)
+  FROM animals A
+  JOIN owners O ON O.id = A.owner_id
+  GROUP BY O.full_name
+  ORDER BY COUNT(O.full_name) DESC LIMIT 1;
